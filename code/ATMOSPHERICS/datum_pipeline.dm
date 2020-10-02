@@ -101,16 +101,21 @@ GLOBAL_VAR_INIT(pipenetwarnings, 10)
 
 /datum/pipeline/proc/merge(datum/pipeline/E)
 	air.volume += E.air.volume
-	members.Add(E.members)
-	for(var/obj/machinery/atmospherics/pipe/S in E.members)
-		S.parent = src
 	air.merge(E.air)
+
+	members.Add(E.members)
+	other_atmosmch.Add(E.other_atmosmch)
+
+	other_airs.Add(E.other_airs)
+
 	for(var/obj/machinery/atmospherics/A in E.other_atmosmch)
 		A.replacePipenet(E, src)
-	other_atmosmch.Add(E.other_atmosmch)
-	other_airs.Add(E.other_airs)
-	E.members.Cut()
-	E.other_atmosmch.Cut()
+		E.other_atmosmch -= A
+	for(var/obj/machinery/atmospherics/pipe/S in E.members)
+		S.parent = src
+		E.members -= S
+	if(length(E.other_atmosmch) > 0 || length(E.members) > 0)
+		log_world("ERROR: race condition, new members were added during pipeline's destruction.")
 	qdel(E)
 
 /obj/machinery/atmospherics/proc/addMember(obj/machinery/atmospherics/A)
